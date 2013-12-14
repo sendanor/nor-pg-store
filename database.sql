@@ -1,4 +1,6 @@
+
 CREATE TABLE "session" (
-        id BIGSERIAL PRIMARY KEY NOT NULL,
-        content JSON NOT NULL DEFAULT '{}'
+    id BIGSERIAL PRIMARY KEY NOT NULL,
+    sid VARCHAR(255) UNIQUE NOT NULL DEFAULT '',
+    content JSON NOT NULL DEFAULT '{}'
 );

@@ -23,12 +23,14 @@ module.exports = function(connect) {
 	/** Get session data */
 	PgStore.prototype.get = function(sid, callback) {
 		function do_success(rows) {
+			debug.log("PgStore.prototype.get(", sid, ") succeeds with rows: ", rows);
 			var data = rows.shift().content;
 			if(!data) { throw new TypeError('Failed to read session #' + sid); }
 			callback(null, data);
 		}
 
 		function do_fail(err) {
+			debug.log("PgStore.prototype.get(", sid, ") failed: ", err);
 			scope.rollback(err);
 			callback(err);
 		}
@@ -36,8 +38,8 @@ module.exports = function(connect) {
 		var self = this;
 		try {
 			var scope = pg.scope();
-			var query = "SELECT content FROM "+'"' + self._table + '"'+" WHERE id = ?";
-			debug.log("[session] query = " + query);
+			var query = "SELECT content FROM "+'"' + self._table + '"'+" WHERE sid = ?";
+			debug.log("PgStore.prototype.get(", sid, "): query = " + query, " with sid=", sid);
 			pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(do_success).commit().fail(do_fail).done();
 		} catch(e) {
 			callback(e);
@@ -71,8 +73,8 @@ module.exports = function(connect) {
 				};
 			}
 
-			var query = "UPDATE "+'"' + self._table + '"'+" SET content = ? WHERE id = ?";
-			debug.log("[session] query = " + query);
+			var query = "UPDATE "+'"' + self._table + '"'+" SET content = ? WHERE sid = ?";
+			debug.log("[PgStore.prototype.set] query = " + query);
 			pg.start(self.config).then(pg.scope(scope)).query(query, [session, sid]).then(do_success).commit().fail(do_fail).done();
 
 		} catch(e) {
@@ -102,7 +104,9 @@ module.exports = function(connect) {
 			};
 		}
 
-		pg.start(self.config).then(pg.scope(scope)).query("DELETE FROM session WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
+		var query = "DELETE FROM "+'"' + self._table + '"'+" WHERE sid = ?";
+		debug.log("[PgStore.prototype.destroy] query = " + query);
+		pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(do_success).commit().fail(do_fail).done();
 	};
 	
 	/*
