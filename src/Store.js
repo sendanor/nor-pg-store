@@ -6,6 +6,7 @@
 /* FIXME: update expiration so that the session does not expire when user is using the system! */
 
 module.exports = function(connect) {
+	var debug = require('nor-debug');
 	var util = require('util');
 	var pg = require('nor-pg');	
 	var Store = connect.session.Store;
@@ -35,7 +36,9 @@ module.exports = function(connect) {
 		var self = this;
 		try {
 			var scope = pg.scope();
-			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM "+'"' + self._table + '"'+" WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
+			var query = "SELECT content FROM "+'"' + self._table + '"'+" WHERE id = ?";
+			debug.log("[session] query = " + query);
+			pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(do_success).commit().fail(do_fail).done();
 		} catch(e) {
 			callback(e);
 		}
@@ -68,7 +71,9 @@ module.exports = function(connect) {
 				};
 			}
 
-			pg.start(self.config).then(pg.scope(scope)).query("UPDATE "+'"' + self._table + '"'+" SET content = ? WHERE id = ?", [session, sid]).then(do_success).commit().fail(do_fail).done();
+			var query = "UPDATE "+'"' + self._table + '"'+" SET content = ? WHERE id = ?";
+			debug.log("[session] query = " + query);
+			pg.start(self.config).then(pg.scope(scope)).query(query, [session, sid]).then(do_success).commit().fail(do_fail).done();
 
 		} catch(e) {
 			if(callback) {
