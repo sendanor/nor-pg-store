@@ -6,18 +6,16 @@
 /* FIXME: update expiration so that the session does not expire when user is using the system! */
 
 module.exports = function(connect) {
-	"use strict";
-	
+	var util = require('util');
+	var pg = require('nor-pg');	
+	var Store = connect.session.Store;
+
 	function PgStore(options) {
 		options = options || {};
 		Store.call(this, options);
 		this._table = options.table || 'session';
 		this.config = options.pg;
 	}
-	
-	var util = require('util');
-	var pg = require('nor-pg');
-	var Store = connect.session.Store;
 	
 	PgStore.prototype.__proto__ = Store.prototype;
 	
