@@ -35,7 +35,7 @@ module.exports = function(connect) {
 		var self = this;
 		try {
 			var scope = pg.scope();
-			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM \"" + self._table + "\" WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
+			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM '" + self._table + "' WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
 		} catch(e) {
 			callback(e);
 		}
@@ -68,7 +68,7 @@ module.exports = function(connect) {
 				};
 			}
 
-			pg.start(self.config).then(pg.scope(scope)).query("UPDATE session SET content = ? WHERE id = ?", [session, sid]).then(do_success).commit().fail(do_fail).done();
+			pg.start(self.config).then(pg.scope(scope)).query("UPDATE '" + self._table + "' SET content = ? WHERE id = ?", [session, sid]).then(do_success).commit().fail(do_fail).done();
 
 		} catch(e) {
 			if(callback) {
