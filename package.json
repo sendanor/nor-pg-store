@@ -1,0 +1,24 @@
+{
+  "name": "nor-pg-store",
+  "version": "0.1.0",
+  "description": "Express/Connect Session Store in Postgresql",
+  "main": "src/Store.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Sendanor/nor-pg-store.git"
+  },
+  "keywords": [
+    "express",
+    "connect",
+    "session",
+    "store"
+  ],
+  "author": "Jaakko-Heikki Heusala <jheusala@iki.fi>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Sendanor/nor-pg-store/issues"
+  }
+}
