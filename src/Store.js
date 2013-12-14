@@ -11,6 +11,7 @@ module.exports = function(connect) {
 	function PgStore(options) {
 		options = options || {};
 		Store.call(this, options);
+		this._table = options.table || 'session';
 		this.config = options.pg;
 	}
 	
@@ -36,8 +37,7 @@ module.exports = function(connect) {
 		var self = this;
 		try {
 			var scope = pg.scope();
-
-			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM session WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
+			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM \"" + self._table + "\" WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
 		} catch(e) {
 			callback(e);
 		}
