@@ -8,34 +8,34 @@
 module.exports = function(connect) {
 	"use strict";
 	
-	var util = require('util');
-	var pg = require('nor-pg');
-	var Store = connect.session.Store;
-	
 	function PgStore(options) {
 		options = options || {};
 		Store.call(this, options);
 		this.config = options.pg;
 	}
 	
+	var util = require('util');
+	var pg = require('nor-pg');
+	var Store = connect.session.Store;
+	
 	PgStore.prototype.__proto__ = Store.prototype;
 	
 	/** Get session data */
 	PgStore.prototype.get = function(sid, callback) {
+		function do_success(rows) {
+			var data = rows.shift().content;
+			if(!data) { throw new TypeError('Failed to read session #' + sid); }
+			callback(null, data);
+		}
+
+		function do_fail(err) {
+			scope.rollback(err);
+			callback(err);
+		}
+
 		var self = this;
 		try {
 			var scope = pg.scope();
-
-			function do_success(rows) {
-				var data = rows.shift().content;
-				if(!data) { throw new TypeError('Failed to read session #' + sid); }
-				callback(null, data);
-			}
-
-			function do_fail(err) {
-				scope.rollback(err);
-				callback(err);
-			}
 
 			pg.start(self.config).then(pg.scope(scope)).query("SELECT content FROM session WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
 		} catch(e) {
@@ -45,6 +45,15 @@ module.exports = function(connect) {
 	
 	/** Set session data */
 	PgStore.prototype.set = function(sid, session, callback) {
+		function do_success() {
+			callback();
+		}
+
+		function do_fail(err) {
+			scope.rollback(err);
+			callback(err);
+		}
+
 		var self = this;
 		try {
 			var scope = pg.scope();
@@ -61,15 +70,6 @@ module.exports = function(connect) {
 				};
 			}
 
-			function do_success() {
-				callback();
-			}
-
-			function do_fail(err) {
-				scope.rollback(err);
-				callback(err);
-			}
-
 			pg.start(self.config).then(pg.scope(scope)).query("UPDATE session SET content = ? WHERE id = ?", [session, sid]).then(do_success).commit().fail(do_fail).done();
 
 		} catch(e) {
@@ -83,13 +83,6 @@ module.exports = function(connect) {
 	
 	/** Destroy session data */
 	PgStore.prototype.destroy = function(sid, callback) {
-		var self = this;
-		if(typeof callback !== 'function') {
-			callback = function(err) {
-				console.error('Error: ' + util.inspect(err) );
-			};
-		}
-
 		function do_success() {
 			callback();
 		}
@@ -97,6 +90,13 @@ module.exports = function(connect) {
 		function do_fail(err) {
 			scope.rollback(err);
 			callback(err);
+		}
+
+		var self = this;
+		if(typeof callback !== 'function') {
+			callback = function(err) {
+				console.error('Error: ' + util.inspect(err) );
+			};
 		}
 
 		pg.start(self.config).then(pg.scope(scope)).query("DELETE FROM session WHERE id = ?", [sid]).then(do_success).commit().fail(do_fail).done();
