@@ -21,11 +21,17 @@ PgStore.prototype = new Store();
 	
 /** Get session data */
 PgStore.prototype.get = function(sid, callback) {
+	var result;
 	var self = this;
 	var scope;
 
-	function do_success(db) {
-		var rows = db.fetch();
+	function save_result(db) {
+		result = db.fetch();
+		return db;
+	}
+
+	function do_success() {
+		var rows = result;
 		debug.log("PgStore.prototype.get(", sid, ") succeeds with rows: ", rows);
 		var data = rows.shift();
 		if(!(data && data.content)) {
@@ -48,7 +54,7 @@ PgStore.prototype.get = function(sid, callback) {
 		debug.log("PgStore.prototype.get(", sid, "): query = " + query, " with sid=", sid);
 
 		scope = pg.scope();
-		pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(do_success).commit().fail(do_fail).done();
+		pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(save_result).commit().then(do_success).fail(do_fail).done();
 		//callback(null, {});
 	} catch(e) {
 		callback(e);
@@ -58,10 +64,6 @@ PgStore.prototype.get = function(sid, callback) {
 /** Set session data */
 PgStore.prototype.set = function(sid, session, callback) {
 	var scope;
-
-	function do_success() {
-		callback();
-	}
 
 	function do_fail(err) {
 		debug.log("PgStore.prototype.set(", sid, ") failed: ", err);
@@ -107,7 +109,9 @@ PgStore.prototype.set = function(sid, session, callback) {
 			var query = exists ? update_query : insert_query;
 			debug.log("[PgStore.prototype.set(", sid, "] query = ", query);
 			return db.query( query, [session, sid]);
-		}).commit().fail(do_fail).done();
+		}).commit().then(function() {
+			callback();
+		}).fail(do_fail).done();
 
 	} catch(e) {
 		if(callback) {
@@ -122,10 +126,6 @@ PgStore.prototype.set = function(sid, session, callback) {
 PgStore.prototype.destroy = function(sid, callback) {
 	var scope;
 
-	function do_success() {
-		callback();
-	}
-		
 	function do_fail(err) {
 		debug.log("PgStore.prototype.destroy(", sid, ") failed: ", err);
 		scope.rollback(err);
@@ -142,7 +142,9 @@ PgStore.prototype.destroy = function(sid, callback) {
 	var query = "DELETE FROM "+'"' + self._table + '"'+" WHERE sid = $1";
 	debug.log("[PgStore.prototype.destroy] query = " + query);
 	scope = pg.scope();
-	pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).then(do_success).commit().fail(do_fail).done();
+	pg.start(self.config).then(pg.scope(scope)).query(query, [sid]).commit().then(function() {
+		callback();
+	}).fail(do_fail).done();
 };
 	
 /*
